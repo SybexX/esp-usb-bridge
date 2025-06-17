@@ -9,9 +9,10 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "serial.h"
 #include "tusb.h"
 #include "msc.h"
+#include "serial_handler.h"
+#include "serial_bridge.h"
 #include "hal/usb_phy_types.h"
 #include "soc/usb_periph.h"
 #include "rom/gpio.h"
@@ -232,9 +233,11 @@ void app_main(void)
 
     int_usb_phy();
 
+    ESP_ERROR_CHECK(serial_handler_init(TRANSPORT_TYPE_UART));
+    ESP_ERROR_CHECK(serial_bridge_init());
+
     tusb_init();
     msc_init();
-    serial_init();
 
     xTaskCreate(tusb_device_task, "tusb_device_task", 4 * 1024, NULL, 5, NULL);
 }

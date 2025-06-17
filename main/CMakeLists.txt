@@ -1,11 +1,10 @@
 idf_component_register(SRCS "main.c"
                             "esp_usb_jtag.c"
-                            "serial.c"
                             "msc.c"
-                            "util.c"
                             "eub_vendord.c"
                             "eub_swd.c"
-                       REQUIRES "tinyusb" "driver" "esp_timer" "usb" "platform" "DAP"
+                            "serial_bridge.c"
+                       REQUIRES "tinyusb" "driver" "esp_timer" "usb" "platform" "DAP" "serial_handler" "util"
                        LDFRAGMENTS "noflash.lf"
                        INCLUDE_DIRS "." "public_include")
 

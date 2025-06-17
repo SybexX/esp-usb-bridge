@@ -1,4 +1,4 @@
 ## IDF Component Manager Manifest File
 dependencies:
   idf: ">=5.0"
-  espressif/tinyusb: "^0.18.0~2"
+  espressif/esp-serial-flasher: "^1.8"
