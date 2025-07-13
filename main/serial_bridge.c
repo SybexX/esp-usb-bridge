@@ -19,10 +19,9 @@
 #include "freertos/semphr.h"
 #include "driver/gpio.h"
 #include "esp_timer.h"
-#include "esp_rom_sys.h"
 #include "util.h"
 #include "esp_io.h"
-#include "eub_debug_probe.h"
+#include "debug_probe.h"
 
 #define USB_SEND_RINGBUFFER_SIZE (2 * 1024)
 
@@ -163,8 +162,8 @@ void tud_cdc_line_state_cb(const uint8_t itf, const bool dtr, const bool rts)
     } else {
         ESP_LOGI(TAG, "DTR = %d, RTS = %d -> BOOT = %d, RST = %d", dtr, rts, boot, rst);
 
-        gpio_set_level(GPIO_BOOT, boot);
-        gpio_set_level(GPIO_RST, rst);
+        serial_handler_set_boot_reset_pins(boot ? RUNNING_MODE : DOWNLOAD_MODE,
+                                           rst ? RESET_RELEASE : RESET_ASSERT);
 
         if (!rst) {
             const uint32_t default_baud = 115200;
@@ -176,18 +175,8 @@ void tud_cdc_line_state_cb(const uint8_t itf, const bool dtr, const bool rts)
         // On ESP32, TDI jtag signal is on GPIO12, which is also a strapping pin that determines flash voltage.
         // If TDI is high when ESP32 is released from external reset, the flash voltage is set to 1.8V, and the chip will fail to boot.
         // As a solution, MTDI signal forced to be low when RST is about to go high.
-        static bool tdi_bootstrapping = false;
-        if (eub_debug_probe_target_is_esp32() && !tdi_bootstrapping && boot && !rst) {
-            eub_debug_probe_task_suspend();
-            tdi_bootstrapping = true;
-            gpio_set_level(GPIO_TDI, 0);
-            ESP_LOGW(TAG, "jtag task suspended");
-        }
-        if (tdi_bootstrapping && boot && rst) {
-            esp_rom_delay_us(1000); /* wait for reset */
-            eub_debug_probe_task_resume();
-            tdi_bootstrapping = false;
-            ESP_LOGW(TAG, "jtag task resumed");
+        if (boot) {
+            debug_probe_handle_esp32_tdi_bootstrapping(!rst);
         }
     }
 }
@@ -195,8 +184,7 @@ void tud_cdc_line_state_cb(const uint8_t itf, const bool dtr, const bool rts)
 static void state_change_timer_cb(void *arg)
 {
     ESP_LOGI(TAG, "BOOT = 1, RST = 1");
-    gpio_set_level(GPIO_BOOT, true);
-    gpio_set_level(GPIO_RST, true);
+    serial_handler_set_boot_reset_pins(RUNNING_MODE, RESET_RELEASE); // BOOT=1, RST=1 (not in reset)
 }
 
 static void init_state_change_timer(void)

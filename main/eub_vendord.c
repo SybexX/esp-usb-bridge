@@ -14,22 +14,16 @@
 #include "esp_timer.h"
 
 #include "eub_vendord.h"
-#include "eub_debug_probe.h"
+#include "debug_probe.h"
 #include "usb_defs.h"
 #include "util.h"
 
 static const char *TAG = "eub_vendor";
-
-/* 4K ringbuffer size is more than enough */
-#define USB_RCVBUF_SIZE     4096
-#define USB_SNDBUF_SIZE     4096
 #define USB_BUSY_TOUT_US    100000 /* 100ms */
 
 typedef struct {
     uint8_t ep_in;
     uint8_t ep_out;
-    RingbufHandle_t usb_rcvbuf;
-    RingbufHandle_t usb_sndbuf;
     TaskHandle_t usb_tx_task_handle;
     uint8_t epout_buf[EUB_VENDORD_EPSIZE];  /* Endpoint Transfer buffer */
 } eub_vendord_interface_t;
@@ -153,7 +147,21 @@ bool tud_vendor_control_xfer_cb(const uint8_t rhport, const uint8_t stage, tusb_
         case VENDOR_REQUEST_MICROSOFT:
             return tud_control_xfer(rhport, request, (void *)(uintptr_t)desc_ms_os_20, MS_OS_20_DESC_LEN);
         default:
-            return eub_debug_probe_control_handler(rhport, stage, request);
+            debug_probe_cmd_response_t response = debug_probe_handle_command(
+                    request->bRequest,
+                    request->wValue
+                                                  );
+
+            if (!response.success) {
+                return false;
+            }
+
+            // Handle USB response
+            if (response.data_len > 0) {
+                return tud_control_xfer(rhport, request, (void *)response.data, response.data_len);
+            } else {
+                return tud_control_status(rhport, request);
+            }
         }
 
     default:
@@ -188,11 +196,9 @@ static bool eub_vendord_xfer_cb(uint8_t rhport, uint8_t ep_addr, xfer_result_t r
         /* nothing to do for now */
         return true;
     } else if (ep_dir == TUSB_DIR_OUT) {
-        BaseType_t res = xRingbufferSend(s_eub_vendord_itf.usb_rcvbuf,
-                                         s_eub_vendord_itf.epout_buf, xferred_bytes, pdMS_TO_TICKS(1000));
-        if (res != pdTRUE) {
-            ESP_LOGE(TAG, "Cannot write to usb_rcvbuf ringbuffer (free %d of %d)!",
-                     xRingbufferGetCurFreeSize(s_eub_vendord_itf.usb_rcvbuf), USB_RCVBUF_SIZE);
+        esp_err_t process_result = debug_probe_process_data(s_eub_vendord_itf.epout_buf, xferred_bytes);
+        if (process_result != ESP_OK) {
+            ESP_LOGW(TAG, "Debug probe failed to process data: %s", esp_err_to_name(process_result));
             eub_abort();
         }
 
@@ -215,39 +221,17 @@ static void usb_send_task(void *pvParameters)
     ESP_LOGI(TAG, "usb_send_task is ready!");
 
     for (;;) {
-        uint8_t *buf = xRingbufferReceive(s_eub_vendord_itf.usb_sndbuf, &total_bytes, portMAX_DELAY);
+        uint8_t *buf_copy = debug_probe_get_data_to_send(&total_bytes, portMAX_DELAY);
 
-        ESP_LOG_BUFFER_HEXDUMP("res", buf, total_bytes, ESP_LOG_DEBUG);
-
-        if (!eub_endpt_transfer(s_rhport, s_eub_vendord_itf.ep_in, buf, total_bytes)) {
+        if (!eub_endpt_transfer(s_rhport, s_eub_vendord_itf.ep_in, buf_copy, total_bytes)) {
             ESP_LOGE(TAG, "USB transfer error on EP:%x", s_eub_vendord_itf.ep_in);
             eub_abort();
         }
 
-        vRingbufferReturnItem(s_eub_vendord_itf.usb_sndbuf, buf);
+        debug_probe_free_sent_data(buf_copy);
     }
 
     vTaskDelete(NULL);
-}
-
-int eub_vendord_send_item(const void *buf, const size_t size)
-{
-    if (xRingbufferSend(s_eub_vendord_itf.usb_sndbuf, buf, size, pdMS_TO_TICKS(1000)) != pdTRUE) {
-        ESP_LOGE(TAG, "Cannot write to usb_sndbuf ringbuffer (free %d of %d)!",
-                 xRingbufferGetCurFreeSize(s_eub_vendord_itf.usb_sndbuf), USB_SNDBUF_SIZE);
-        return 0;
-    }
-    return size;
-}
-
-void *eub_vendord_recv_acquire_item(size_t *item_size)
-{
-    return xRingbufferReceive(s_eub_vendord_itf.usb_rcvbuf, item_size, portMAX_DELAY);
-}
-
-void eub_vendord_free_item(void *item)
-{
-    vRingbufferReturnItem(s_eub_vendord_itf.usb_rcvbuf, item);
 }
 
 void eub_vendord_start(void)
@@ -257,25 +241,11 @@ void eub_vendord_start(void)
     static bool init = false;
 
     if (!init) {
-
-        /* We would like to process OpenOCD packages one by one. RINGBUF_TYPE_NOSPLIT allows us to do it. */
-        s_eub_vendord_itf.usb_rcvbuf = xRingbufferCreate(USB_RCVBUF_SIZE, RINGBUF_TYPE_NOSPLIT);
-        if (!s_eub_vendord_itf.usb_rcvbuf) {
-            ESP_LOGE(TAG, "Cannot allocate USB receive buffer!");
-            eub_abort();
-        }
-
-        s_eub_vendord_itf.usb_sndbuf = xRingbufferCreate(USB_SNDBUF_SIZE, RINGBUF_TYPE_NOSPLIT);
-        if (!s_eub_vendord_itf.usb_sndbuf) {
-            ESP_LOGE(TAG, "Cannot allocate USB send buffer!");
-            eub_abort();
-        }
-
         if (xTaskCreate(usb_send_task,
                         "usb_send_task",
                         4 * 1024,
                         NULL,
-                        EUB_VENDORD_USB_TASK_PRI,
+                        DEBUG_PROBE_TASK_PRI - 1,
                         &s_eub_vendord_itf.usb_tx_task_handle) != pdPASS) {
             ESP_LOGE(TAG, "Cannot create USB send task!");
             eub_abort();

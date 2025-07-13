@@ -24,7 +24,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/usb_phy.h"
 #include "eub_vendord.h"
-#include "eub_debug_probe.h"
+#include "debug_probe.h"
 #include "usb_defs.h"
 
 static const char *TAG = "bridge_main";
@@ -132,7 +132,12 @@ void tud_mount_cb(void)
     ESP_LOGI(TAG, "Mounted");
 
     eub_vendord_start();
-    eub_debug_probe_init();
+
+    esp_err_t debug_result = debug_probe_init();
+    if (debug_result != ESP_OK) {
+        ESP_LOGW(TAG, "Debug probe initialization failed: %s", esp_err_to_name(debug_result));
+        eub_abort();
+    }
 }
 
 static void init_serial_no(void)
@@ -157,8 +162,8 @@ uint16_t const *tud_descriptor_string_cb(const uint8_t index, const uint16_t lan
     if (index == 0) {
         memcpy(&_desc_str[1], string_desc_arr[0], 2);
         chr_count = 1;
-    } else if (index == EUB_DEBUG_PROBE_STR_DESC_INX) {
-        chr_count = eub_debug_probe_get_proto_caps(&_desc_str[1]) / 2;
+    } else if (index == DEBUG_PROBE_STR_DESC_INX) {
+        chr_count = debug_probe_get_proto_caps(&_desc_str[1]) / 2;
     } else {
         // Convert ASCII string into UTF-16
 
