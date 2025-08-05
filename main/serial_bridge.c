@@ -162,8 +162,7 @@ void tud_cdc_line_state_cb(const uint8_t itf, const bool dtr, const bool rts)
     } else {
         ESP_LOGI(TAG, "DTR = %d, RTS = %d -> BOOT = %d, RST = %d", dtr, rts, boot, rst);
 
-        serial_handler_set_boot_reset_pins(boot ? RUNNING_MODE : DOWNLOAD_MODE,
-                                           rst ? RESET_RELEASE : RESET_ASSERT);
+        serial_handler_set_boot_reset_pins(boot, rst);
 
         if (!rst) {
             const uint32_t default_baud = 115200;
@@ -184,7 +183,7 @@ void tud_cdc_line_state_cb(const uint8_t itf, const bool dtr, const bool rts)
 static void state_change_timer_cb(void *arg)
 {
     ESP_LOGI(TAG, "BOOT = 1, RST = 1");
-    serial_handler_set_boot_reset_pins(RUNNING_MODE, RESET_RELEASE); // BOOT=1, RST=1 (not in reset)
+    serial_handler_set_boot_reset_pins(true, true); // BOOT=1, RST=1 (not in reset)
 }
 
 static void init_state_change_timer(void)

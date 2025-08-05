@@ -1,12 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "sdkconfig.h"
+#include "debug_gpio.h"
 #include "esp_log.h"
-#include "esp_io.h"
+#include "esp_err.h"
+#include "debug_probe.h"
 
 #define GET_IDX(mask)   (__builtin_ctz(mask))
 
@@ -14,19 +15,20 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 #endif
 
-dedic_gpio_bundle_handle_t s_gpio_out_bundle;
-dedic_gpio_bundle_handle_t s_gpio_io_bundle;
-static int s_init_gpio = 0;
-gpio_dev_t *const s_gpio_dev = GPIO_LL_GET_HW(GPIO_PORT_0);
-uint32_t s_gpio_conf;
+dedic_gpio_bundle_handle_t dedic_gpio_out_bundle;
+dedic_gpio_bundle_handle_t dedic_gpio_io_bundle;
+gpio_dev_t *const dedic_gpio_dev = GPIO_LL_GET_HW(GPIO_PORT_0);
+uint32_t dedic_gpio_conf;
 
-static const char *TAG = "esp_io";
+static int s_debug_gpio_init = 0;
+
+static const char *TAG = "debug_gpio";
 
 #if CONFIG_BRIDGE_DEBUG_IFACE_JTAG
 
-void esp_init_jtag_pins(void)
+void debug_probe_init_jtag_pins(void)
 {
-    if (!s_init_gpio) {
+    if (!s_debug_gpio_init) {
         gpio_config_t io_conf = {
             .mode = GPIO_MODE_OUTPUT,
             .pin_bit_mask = BIT64(GPIO_TDI) | BIT64(GPIO_TCK) | BIT64(GPIO_TMS),
@@ -59,13 +61,13 @@ void esp_init_jtag_pins(void)
             },
         };
 
-        dedic_gpio_new_bundle(&out_bundle_config, &s_gpio_out_bundle);
-        dedic_gpio_new_bundle(&in_bundle_config, &s_gpio_io_bundle);
+        dedic_gpio_new_bundle(&out_bundle_config, &dedic_gpio_out_bundle);
+        dedic_gpio_new_bundle(&in_bundle_config, &dedic_gpio_io_bundle);
 
         dedic_gpio_cpu_ll_write_mask(GPIO_TMS_MASK, GPIO_TMS_MASK);
         dedic_gpio_cpu_ll_write_mask(GPIO_TCK_MASK, 0);
 
-        s_init_gpio = 1;
+        s_debug_gpio_init = 1;
 
         ESP_LOGI(TAG, "JTAG GPIO init done");
     }
@@ -73,21 +75,17 @@ void esp_init_jtag_pins(void)
 
 #else
 
-void esp_init_swd_pins(void)
+void debug_probe_init_swd_pins(void)
 {
-    if (!s_init_gpio) {
+    if (!s_debug_gpio_init) {
         gpio_reset_pin(GPIO_SWDIO);
         gpio_reset_pin(GPIO_SWCLK);
-        esp_gpio_mode_in_out_enable(GPIO_SWDIO);
+        debug_probe_mode_in_out_enable(GPIO_SWDIO);
         gpio_set_pull_mode(GPIO_SWDIO, GPIO_PULLUP_ONLY);
-        esp_gpio_mode_out_enable(GPIO_SWCLK);
+        debug_probe_mode_out_enable(GPIO_SWCLK);
 
         int bundle_out_gpios[GET_IDX(GPIO_SWD_OUT_MAX_MASK)] = { 0 };
         int bundle_io_gpios[GET_IDX(GPIO_SWDIO_MAX_MASK)] = { 0 };
-
-        esp_gpio_clear(LED_JTAG_ON);
-        esp_gpio_mode_out_enable(LED_JTAG_ON);
-        bundle_out_gpios[GET_IDX(GPIO_SWD_BLINK_MASK)] = LED_JTAG_ON;
 
         bundle_io_gpios[GET_IDX(GPIO_SWDIO_MASK)] = GPIO_SWDIO;
         dedic_gpio_bundle_config_t io_bundle_config = {
@@ -108,27 +106,27 @@ void esp_init_swd_pins(void)
             },
         };
 
-        dedic_gpio_new_bundle(&out_bundle_config, &s_gpio_out_bundle);
-        dedic_gpio_new_bundle(&io_bundle_config, &s_gpio_io_bundle);
-        s_gpio_conf = REG_READ(GPIO_FUNC0_OUT_SEL_CFG_REG + (GPIO_SWDIO * 4));
+        dedic_gpio_new_bundle(&out_bundle_config, &dedic_gpio_out_bundle);
+        dedic_gpio_new_bundle(&io_bundle_config, &dedic_gpio_io_bundle);
+        dedic_gpio_conf = REG_READ(GPIO_FUNC0_OUT_SEL_CFG_REG + (GPIO_SWDIO * 4));
 
-        s_init_gpio = 1;
+        s_debug_gpio_init = 1;
 
         ESP_LOGI(TAG, "SWD GPIO init done");
     }
 }
 
-void esp_reset_dap_pins(void)
+void debug_probe_reset_pins(void)
 {
     gpio_reset_pin(GPIO_SWDIO); // GPIO_TMS
     gpio_reset_pin(GPIO_SWCLK); // GPIO_TCK
     gpio_reset_pin(GPIO_TDI);
     gpio_reset_pin(GPIO_TDO);
 
-    dedic_gpio_del_bundle(s_gpio_io_bundle);
-    dedic_gpio_del_bundle(s_gpio_out_bundle);
+    dedic_gpio_del_bundle(dedic_gpio_io_bundle);
+    dedic_gpio_del_bundle(dedic_gpio_out_bundle);
 
-    s_init_gpio = 0;
+    s_debug_gpio_init = 0;
 }
 
 #endif

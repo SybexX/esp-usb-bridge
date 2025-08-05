@@ -8,7 +8,10 @@ repos:
     hooks:
       - id: trailing-whitespace
         exclude: &whitespace_excludes |
-          (?x)^.*\.(md|rst|map|bin)$
+          (?x)^(
+            .*\.(md|rst|map|bin)$|
+            components/debug_probe/DAP/.*|
+          )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
       - id: mixed-line-ending

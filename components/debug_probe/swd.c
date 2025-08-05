@@ -13,7 +13,6 @@
 #include "freertos/ringbuf.h"
 #include "esp_log.h"
 #include "debug_probe.h"
-#include "util.h"
 #include "DAP_config.h"
 #include "DAP.h"
 

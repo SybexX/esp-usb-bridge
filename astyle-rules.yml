@@ -4,8 +4,8 @@ DEFAULT:
 not_formatted:
   check: false
   include:
-    - "components/DAP/"
-    - "components/DAP/Config/"
-    - "components/DAP/Include/"
-    - "components/DAP/Source/"
+    - "components/debug_probe/DAP/"
+    - "components/debug_probe/DAP/Config/"
+    - "components/debug_probe/DAP/Include/"
+    - "components/debug_probe/DAP/Source/"
     - "images/"

@@ -46,7 +46,7 @@ This information includes:
 #include <string.h>
 #include "sdkconfig.h"
 #include "compiler.h"
-#include "esp_io.h"
+#include "debug_gpio.h"
 #include "esp_timer.h"
 
 /// Processor Clock of the Cortex-M MCU used in the Debug Unit.
@@ -318,7 +318,7 @@ Configures the DAP Hardware I/O pins for JTAG mode:
  - TDO to input mode.
 */
 __STATIC_INLINE void PORT_JTAG_SETUP (void) {
-    esp_init_jtag_pins();
+    debug_probe_init_jtag_pins();
 }
 
 /** Setup SWD I/O pins: SWCLK, SWDIO, and nRESET.
@@ -327,7 +327,7 @@ Configures the DAP Hardware I/O pins for Serial Wire Debug (SWD) mode:
  - TDI, nTRST to HighZ mode (pins are unused in SWD mode).
 */
 __STATIC_INLINE void PORT_SWD_SETUP (void) {
-    esp_init_swd_pins();
+    debug_probe_init_swd_pins();
 }
 
 /** Disable JTAG/SWD I/O Pins.
@@ -335,7 +335,7 @@ Disables the DAP Hardware I/O pins which configures:
  - TCK/SWCLK, TMS/SWDIO, TDI, TDO, nTRST, nRESET to High-Z mode.
 */
 __STATIC_INLINE void PORT_OFF (void) {
-    esp_reset_dap_pins();
+    debug_probe_reset_pins();
 }
 
 
@@ -352,14 +352,14 @@ __STATIC_FORCEINLINE uint32_t PIN_SWCLK_TCK_IN  (void) {
 Set the SWCLK/TCK DAP hardware I/O pin to high level.
 */
 __STATIC_FORCEINLINE void     PIN_SWCLK_TCK_SET (void) {
-    esp_gpio_swclk_set();
+    debug_probe_swclk_set();
 }
 
 /** SWCLK/TCK I/O pin: Set Output to Low.
 Set the SWCLK/TCK DAP hardware I/O pin to low level.
 */
 __STATIC_FORCEINLINE void     PIN_SWCLK_TCK_CLR (void) {
-    esp_gpio_swclk_clr();
+    debug_probe_swclk_clr();
 }
 
 
@@ -369,35 +369,35 @@ __STATIC_FORCEINLINE void     PIN_SWCLK_TCK_CLR (void) {
 \return Current status of the SWDIO/TMS DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE uint32_t PIN_SWDIO_TMS_IN  (void) {
-    return esp_gpio_swdio_read();
+    return debug_probe_swdio_read();
 }
 
 /** SWDIO/TMS I/O pin: Set Output to High.
 Set the SWDIO/TMS DAP hardware I/O pin to high level.
 */
 __STATIC_FORCEINLINE void     PIN_SWDIO_TMS_SET (void) {
-    esp_gpio_swdio_set();
+    debug_probe_swdio_set();
 }
 
 /** SWDIO/TMS I/O pin: Set Output to Low.
 Set the SWDIO/TMS DAP hardware I/O pin to low level.
 */
 __STATIC_FORCEINLINE void     PIN_SWDIO_TMS_CLR (void) {
-    esp_gpio_swdio_clr();
+    debug_probe_swdio_clr();
 }
 
 /** SWDIO I/O pin: Get Input (used in SWD mode only).
 \return Current status of the SWDIO DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE uint32_t PIN_SWDIO_IN      (void) {
-    return esp_gpio_swdio_read();
+    return debug_probe_swdio_read();
 }
 
 /** SWDIO I/O pin: Set Output (used in SWD mode only).
 \param bit Output value for the SWDIO DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE void     PIN_SWDIO_OUT     (uint32_t bit) {
-    esp_gpio_swdio_write(bit);
+    debug_probe_swdio_write(bit);
 }
 
 /** SWDIO I/O pin: Switch to Output mode (used in SWD mode only).
@@ -405,7 +405,7 @@ Configure the SWDIO DAP hardware I/O pin to output mode. This function is
 called prior \ref PIN_SWDIO_OUT function calls.
 */
 __STATIC_FORCEINLINE void     PIN_SWDIO_OUT_ENABLE  (void) {
-    esp_gpio_swdio_out_enable();
+    debug_probe_swdio_out_enable();
 }
 
 /** SWDIO I/O pin: Switch to Input mode (used in SWD mode only).
@@ -413,7 +413,7 @@ Configure the SWDIO DAP hardware I/O pin to input mode. This function is
 called prior \ref PIN_SWDIO_IN function calls.
 */
 __STATIC_FORCEINLINE void     PIN_SWDIO_OUT_DISABLE (void) {
-    esp_gpio_swdio_out_disable();
+    debug_probe_swdio_out_disable();
 }
 
 
@@ -430,7 +430,7 @@ __STATIC_FORCEINLINE uint32_t PIN_TDI_IN  (void) {
 \param bit Output value for the TDI DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE void     PIN_TDI_OUT (uint32_t bit) {
-    esp_gpio_tdi_write(bit);
+    debug_probe_tdi_write(bit);
 }
 
 
@@ -440,7 +440,7 @@ __STATIC_FORCEINLINE void     PIN_TDI_OUT (uint32_t bit) {
 \return Current status of the TDO DAP hardware I/O pin.
 */
 __STATIC_FORCEINLINE uint32_t PIN_TDO_IN  (void) {
-    return esp_gpio_tdo_read();
+    return debug_probe_tdo_read();
 }
 
 
@@ -509,7 +509,7 @@ __STATIC_INLINE void LED_CONNECTED_OUT (uint32_t bit) {}
            - 0: Target Running LED OFF: program execution in target stopped.
 */
 __STATIC_INLINE void LED_RUNNING_OUT (uint32_t bit) {
-    esp_gpio_swd_blink(bit);
+    debug_probe_swd_blink(bit);
 }
 
 ///@}

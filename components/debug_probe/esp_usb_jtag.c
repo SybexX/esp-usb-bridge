@@ -15,8 +15,7 @@
 #include "esp_rom_sys.h"
 #include "esp_chip_info.h"
 #include "debug_probe.h"
-#include "util.h"
-#include "esp_io.h"
+#include "debug_gpio.h"
 
 static const char *TAG = "esp_usb_jtag";
 
@@ -127,7 +126,7 @@ static void esp_usb_jtag_handle_esp32_tdi_bootstrapping(bool rebooting)
         if (!s_tdi_bootstrapping) {
             esp_usb_jtag_task_suspend();
             s_tdi_bootstrapping = true;
-            esp_gpio_tdi_write(0);
+            debug_probe_tdi_write(0);
             ESP_LOGW(TAG, "JTAG task suspended, TDI forced low");
         }
     } else {
@@ -212,15 +211,15 @@ debug_probe_cmd_response_t esp_usb_jtag_handle_command(uint8_t cmd, uint16_t wVa
 
 inline static void do_jtag_one(const uint8_t tdo_req, const uint8_t tms_tdi_mask)
 {
-    esp_gpio_write_tmstck(tms_tdi_mask);
-    esp_gpio_tck_set();
+    debug_probe_write_tmstck(tms_tdi_mask);
+    debug_probe_tck_set();
 
     if (tdo_req) {
-        s_tdo_bytes[s_total_tdo_bits / 8] |= (esp_gpio_tdo_read() << (s_total_tdo_bits % 8));
+        s_tdo_bytes[s_total_tdo_bits / 8] |= (debug_probe_tdo_read() << (s_total_tdo_bits % 8));
         s_total_tdo_bits++;
     }
 
-    esp_gpio_tck_clr();
+    debug_probe_tck_clr();
 }
 
 static void esp_usb_jtag_task(void *pvParameters)
@@ -254,9 +253,9 @@ static void esp_usb_jtag_task(void *pvParameters)
     int prev_cmd = CMD_SRST0, rep_cnt = 0;
 
     while (1) {
-        esp_gpio_jtag_led_off();
+        debug_probe_jtag_led_off();
         char *nibbles = (char *)xRingbufferReceive(s_jtag_rcvbuf, &cnt, portMAX_DELAY);
-        esp_gpio_jtag_led_on();
+        debug_probe_jtag_led_on();
 
         ESP_LOG_BUFFER_HEXDUMP(TAG, nibbles, cnt, ESP_LOG_DEBUG);
 
@@ -352,7 +351,7 @@ static esp_err_t esp_usb_jtag_init(void)
 
     /* dedicated GPIO will be binded to the CPU who invokes this API */
     /* we will create a jtag task pinned to this core */
-    esp_init_jtag_pins();
+    debug_probe_init_jtag_pins();
 
     BaseType_t res = xTaskCreatePinnedToCore(esp_usb_jtag_task,
                      "jtag_task",
