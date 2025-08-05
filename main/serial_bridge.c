@@ -17,10 +17,8 @@
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "freertos/semphr.h"
-#include "driver/gpio.h"
 #include "esp_timer.h"
 #include "util.h"
-#include "esp_io.h"
 #include "debug_probe.h"
 
 #define USB_SEND_RINGBUFFER_SIZE (2 * 1024)
@@ -113,7 +111,6 @@ void tud_cdc_rx_cb(const uint8_t itf)
 
     const uint32_t rx_size = tud_cdc_n_read(itf, buf, CFG_TUD_CDC_RX_BUFSIZE);
     if (rx_size > 0) {
-        gpio_set_level(LED_RX, LED_RX_ON);
         ESP_LOGD(TAG, "USB CDC -> Transport (%" PRIu32 " bytes)", rx_size);
         ESP_LOG_BUFFER_HEXDUMP("USB CDC -> Transport", buf, rx_size, ESP_LOG_DEBUG);
 
@@ -122,7 +119,6 @@ void tud_cdc_rx_cb(const uint8_t itf)
     } else {
         ESP_LOGW(TAG, "tud_cdc_rx_cb receive error");
     }
-    gpio_set_level(LED_RX, LED_RX_OFF);
 }
 
 void tud_cdc_line_coding_cb(const uint8_t itf, cdc_line_coding_t const *p_line_coding)

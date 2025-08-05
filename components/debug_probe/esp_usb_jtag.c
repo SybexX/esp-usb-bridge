@@ -253,9 +253,9 @@ static void esp_usb_jtag_task(void *pvParameters)
     int prev_cmd = CMD_SRST0, rep_cnt = 0;
 
     while (1) {
-        debug_probe_jtag_led_off();
+        debug_probe_notify_activity(false);
         char *nibbles = (char *)xRingbufferReceive(s_jtag_rcvbuf, &cnt, portMAX_DELAY);
-        debug_probe_jtag_led_on();
+        debug_probe_notify_activity(true);
 
         ESP_LOG_BUFFER_HEXDUMP(TAG, nibbles, cnt, ESP_LOG_DEBUG);
 

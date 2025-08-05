@@ -85,17 +85,17 @@ __STATIC_FORCEINLINE void debug_probe_swdio_write(int val)
 
 __STATIC_FORCEINLINE void debug_probe_swd_blink(int on)
 {
-    gpio_ll_set_level(s_gpio_dev, LED_JTAG, (on & 0x01) ? LED_JTAG_ON : LED_JTAG_OFF);
+    debug_probe_notify_activity(on);
 }
 
 __STATIC_FORCEINLINE void debug_probe_jtag_led_off(void)
 {
-    gpio_ll_set_level(s_gpio_dev, LED_JTAG, LED_JTAG_OFF);
+    debug_probe_notify_activity(false);
 }
 
 __STATIC_FORCEINLINE void debug_probe_jtag_led_on(void)
 {
-    gpio_ll_set_level(s_gpio_dev, LED_JTAG, LED_JTAG_ON);
+    debug_probe_notify_activity(true);
 }
 
 __STATIC_FORCEINLINE int debug_probe_tdo_read(void)

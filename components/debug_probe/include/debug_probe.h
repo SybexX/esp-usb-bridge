@@ -116,3 +116,19 @@ uint8_t *debug_probe_get_data_to_send(size_t *len, TickType_t timeout);
  * @param data Pointer to data buffer to free
  */
 void debug_probe_free_sent_data(uint8_t *data);
+
+/**
+ * @brief Debug activity notification callback
+ * @param active true when debug activity is happening, false when idle
+ */
+typedef void (*debug_activity_notify_cb_t)(bool active);
+
+/**
+ * @brief Register callback for debug activity notifications
+ *
+ * This callback will be called to indicate debug probe activity (JTAG/SWD operations).
+ * Useful for driving activity LEDs or other status indicators.
+ *
+ * @param callback Callback function, can be NULL to disable notifications
+ */
+void debug_probe_register_activity_callback(debug_activity_notify_cb_t callback);

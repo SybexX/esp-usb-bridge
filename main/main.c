@@ -127,6 +127,11 @@ uint8_t const *tud_descriptor_device_cb(void)
     return (uint8_t const *) &descriptor_config;
 }
 
+static void debug_activity_callback(bool active)
+{
+    gpio_set_level(LED_JTAG, active ? LED_JTAG_ON : LED_JTAG_OFF);
+}
+
 void tud_mount_cb(void)
 {
     ESP_LOGI(TAG, "Mounted");
@@ -138,6 +143,7 @@ void tud_mount_cb(void)
         ESP_LOGW(TAG, "Debug probe initialization failed: %s", esp_err_to_name(debug_result));
         eub_abort();
     }
+    debug_probe_register_activity_callback(debug_activity_callback);
 }
 
 static void init_serial_no(void)
@@ -198,6 +204,17 @@ static void tusb_device_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+// LEDs TX and RX are swapped in the code to indicate activity from the bridge to the target
+static void serial_tx_activity_callback(bool active)
+{
+    gpio_set_level(LED_RX, active ? LED_RX_ON : LED_RX_OFF);
+}
+
+static void serial_rx_activity_callback(bool active)
+{
+    gpio_set_level(LED_TX, active ? LED_TX_ON : LED_TX_OFF);
+}
+
 static void init_led_gpios(void)
 {
     gpio_config_t io_conf = {};
@@ -239,6 +256,9 @@ void app_main(void)
     int_usb_phy();
 
     ESP_ERROR_CHECK(serial_handler_init(TRANSPORT_TYPE_UART));
+    serial_handler_register_tx_activity_callback(serial_tx_activity_callback);
+    serial_handler_register_rx_activity_callback(serial_rx_activity_callback);
+
     ESP_ERROR_CHECK(serial_bridge_init());
 
     tusb_init();
