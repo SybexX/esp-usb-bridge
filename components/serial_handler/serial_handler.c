@@ -10,6 +10,8 @@
 #include <inttypes.h>
 #include <sys/param.h>
 
+#include "sdkconfig.h"
+
 #include "serial_handler.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -20,7 +22,6 @@
 #include "driver/uart.h"
 #include "esp_loader.h"
 #include "esp32_port.h"
-#include "esp_io.h"
 #include "esp_timer.h"
 
 #define KB(x) ((x) * 1024)
@@ -28,6 +29,10 @@
 #define SLAVE_UART_NUM          UART_NUM_1
 #define SLAVE_UART_BUF_SIZE     KB(2)
 #define SLAVE_UART_DEFAULT_BAUD 115200
+#define GPIO_BOOT CONFIG_SERIAL_HANDLER_GPIO_BOOT
+#define GPIO_RST CONFIG_SERIAL_HANDLER_GPIO_RST
+#define GPIO_RXD CONFIG_SERIAL_HANDLER_GPIO_RXD
+#define GPIO_TXD CONFIG_SERIAL_HANDLER_GPIO_TXD
 
 static const char *TAG = "serial_handler";
 

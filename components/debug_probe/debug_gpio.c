@@ -38,7 +38,7 @@ void debug_probe_notify_activity(bool active)
     }
 }
 
-#if CONFIG_BRIDGE_DEBUG_IFACE_JTAG
+#if CONFIG_DEBUG_PROBE_IFACE_JTAG
 
 void debug_probe_init_jtag_pins(void)
 {

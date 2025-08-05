@@ -6,7 +6,7 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_BRIDGE_DEBUG_IFACE_SWD
+#if CONFIG_DEBUG_PROBE_IFACE_SWD
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -143,4 +143,4 @@ static esp_err_t swd_init(void)
     return ESP_OK;
 }
 
-#endif /* CONFIG_BRIDGE_DEBUG_IFACE_SWD */
+#endif /* CONFIG_DEBUG_PROBE_IFACE_SWD */

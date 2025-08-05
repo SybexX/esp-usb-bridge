@@ -14,18 +14,15 @@
 #include "serial_handler.h"
 #include "serial_bridge.h"
 #include "hal/usb_phy_types.h"
-#include "soc/usb_periph.h"
 #include "rom/gpio.h"
 #include "driver/gpio.h"
 #include "sdkconfig.h"
-#include "esp_idf_version.h"
-#include "esp_system.h"
 #include "esp_mac.h"
-#include "esp_private/periph_ctrl.h"
 #include "esp_private/usb_phy.h"
 #include "eub_vendord.h"
 #include "debug_probe.h"
 #include "usb_defs.h"
+#include "led_io.h"
 
 static const char *TAG = "bridge_main";
 
@@ -88,14 +85,14 @@ static char serial_descriptor[MAC_BYTES * 2 + 1] = {'\0'}; // 2 chars per hexnum
 static char const *string_desc_arr[] = {
     (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
     CONFIG_BRIDGE_MANUFACTURER,    // 1: Manufacturer
-#if CONFIG_BRIDGE_DEBUG_IFACE_JTAG
+#if CONFIG_DEBUG_PROBE_IFACE_JTAG
     CONFIG_BRIDGE_PRODUCT_NAME,    // 2: Product
 #else
     "CMSIS-DAP",                   // OpenOCD expects "CMSIS-DAP" as a product name
 #endif
     serial_descriptor,             // 3: Serials
     "CDC",
-    CONFIG_BRIDGE_DEBUG_IFACE_NAME, // JTAG or CMSIS-DAP
+    CONFIG_DEBUG_PROBE_IFACE_NAME, // JTAG or CMSIS-DAP
     "MSC",
 
     /* JTAG_STR_DESC_INX 0x0A */

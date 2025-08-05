@@ -32,9 +32,6 @@
 #include "util.h"
 #include "serial_handler.h"
 #include "sdkconfig.h"
-#include "driver/gpio.h"
-#include "esp_io.h"
-
 #define KB(x) ((x) * 1024)
 
 #define FAT_CLUSTERS                    KB(6)

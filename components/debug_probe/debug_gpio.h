@@ -10,9 +10,68 @@
 #include <driver/dedic_gpio.h>
 #include <hal/dedic_gpio_cpu_ll.h>
 #include "hal/gpio_ll.h"
-#include "esp_io.h"
 #include "compiler.h"
 #include "sdkconfig.h"
+
+/* Debug pins - JTAG */
+#define GPIO_TDI        CONFIG_DEBUG_PROBE_GPIO_TDI
+#define GPIO_TDO        CONFIG_DEBUG_PROBE_GPIO_TDO
+#define GPIO_TCK        CONFIG_DEBUG_PROBE_GPIO_TCK
+#define GPIO_TMS        CONFIG_DEBUG_PROBE_GPIO_TMS
+
+/* Debug pins - SWD */
+#define GPIO_SWCLK      CONFIG_DEBUG_PROBE_GPIO_TCK
+#define GPIO_SWDIO      CONFIG_DEBUG_PROBE_GPIO_TMS
+
+/* GPIO bundle mask values for high-speed operations */
+/* SWD io pin mask values */
+#define GPIO_SWDIO_MASK         0x01    /* bundle_io_gpios[0] */ /* input/output */
+#define GPIO_SWDIO_MAX_MASK     0x02    /* will be used as io array size */
+
+/* SWD out pin mask values */
+#define GPIO_SWCLK_MASK         0x01    /* bundle_out_gpios[0] */
+#define GPIO_SWD_BLINK_MASK     0x02    /* bundle_out_gpios[1] */
+#define GPIO_SWD_OUT_MAX_MASK   0x04    /* will be used as out array size */
+#define GPIO_SWDIO_OUT_MASK     0x04    /* will not be in the out array, but it should follow the previous pin mask */
+
+/* JTAG out pin mask values */
+#define GPIO_TCK_MASK           0x01
+#define GPIO_TDI_MASK           0x02
+#define GPIO_TMS_MASK           0x04
+#define GPIO_TMS_TDI_MASK       0x06
+
+/* JTAG input pin mask values */
+#define GPIO_TDO_MASK           0x01
+
+/* Debug pins - JTAG */
+#define GPIO_TDI        CONFIG_DEBUG_PROBE_GPIO_TDI
+#define GPIO_TDO        CONFIG_DEBUG_PROBE_GPIO_TDO
+#define GPIO_TCK        CONFIG_DEBUG_PROBE_GPIO_TCK
+#define GPIO_TMS        CONFIG_DEBUG_PROBE_GPIO_TMS
+
+/* Debug pins - SWD */
+#define GPIO_SWCLK      CONFIG_DEBUG_PROBE_GPIO_TCK
+#define GPIO_SWDIO      CONFIG_DEBUG_PROBE_GPIO_TMS
+
+/* GPIO bundle mask values for high-speed operations */
+/* SWD io pin mask values */
+#define GPIO_SWDIO_MASK         0x01    /* bundle_io_gpios[0] */ /* input/output */
+#define GPIO_SWDIO_MAX_MASK     0x02    /* will be used as io array size */
+
+/* SWD out pin mask values */
+#define GPIO_SWCLK_MASK         0x01    /* bundle_out_gpios[0] */
+#define GPIO_SWD_BLINK_MASK     0x02    /* bundle_out_gpios[1] */
+#define GPIO_SWD_OUT_MAX_MASK   0x04    /* will be used as out array size */
+#define GPIO_SWDIO_OUT_MASK     0x04    /* will not be in the out array, but it should follow the previous pin mask */
+
+/* JTAG out pin mask values */
+#define GPIO_TCK_MASK           0x01
+#define GPIO_TDI_MASK           0x02
+#define GPIO_TMS_MASK           0x04
+#define GPIO_TMS_TDI_MASK       0x06
+
+/* JTAG input pin mask values */
+#define GPIO_TDO_MASK           0x01
 
 extern dedic_gpio_bundle_handle_t dedic_gpio_out_bundle;
 extern dedic_gpio_bundle_handle_t dedic_gpio_io_bundle;

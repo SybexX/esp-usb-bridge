@@ -63,7 +63,7 @@ This information includes:
 
 /// Indicate that Serial Wire Debug (SWD) communication mode is available at the Debug Access Port.
 /// This information is returned by the command \ref DAP_Info as part of <b>Capabilities</b>.
-#if CONFIG_BRIDGE_DEBUG_IFACE_SWD
+#if CONFIG_DEBUG_PROBE_IFACE_SWD
 #define DAP_SWD                 1  ///< SWD Mode:  1 = available, 0 = not available.
 #else
 #define DAP_SWD                 0
@@ -71,7 +71,7 @@ This information includes:
 
 /// Indicate that JTAG communication mode is available at the Debug Port.
 /// This information is returned by the command \ref DAP_Info as part of <b>Capabilities</b>.
-#if CONFIG_BRIDGE_DEBUG_IFACE_JTAG
+#if CONFIG_DEBUG_PROBE_IFACE_JTAG
 #define DAP_JTAG                1  ///< JTAG Mode: 1 = available, 0 = not available.
 #else
 #define DAP_JTAG                0

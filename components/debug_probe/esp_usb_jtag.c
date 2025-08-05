@@ -5,7 +5,7 @@
  */
 #include "sdkconfig.h"
 
-#if CONFIG_BRIDGE_DEBUG_IFACE_JTAG
+#if CONFIG_DEBUG_PROBE_IFACE_JTAG
 
 #include "string.h"
 #include "esp_log.h"
@@ -368,4 +368,4 @@ static esp_err_t esp_usb_jtag_init(void)
     return ESP_OK;
 }
 
-#endif /* CONFIG_BRIDGE_DEBUG_IFACE_JTAG */
+#endif /* CONFIG_DEBUG_PROBE_IFACE_JTAG */
